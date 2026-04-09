@@ -1,0 +1,5 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+# From https://github.com/esp-rs/esp-idf-hal/blob/master/partitions.csv
+nvs,      data, nvs,     ,        0x6000,
+phy_init, data, phy,     ,        0x1000,
+factory,  app,  factory, ,        3M,

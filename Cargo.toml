@@ -1,0 +1,13 @@
+[package]
+name = "nmea2000-ble"
+version = "0.1.0"
+edition = "2024"
+resolver = "2"
+
+[dependencies]
+esp-idf-svc = "0.52"
+esp-idf-hal = "0.46.2"
+log = "0.4"
+
+[build-dependencies]
+embuild = { version = "0.32", features = ["espidf"] }
