@@ -5,9 +5,12 @@ edition = "2024"
 resolver = "2"
 
 [dependencies]
-esp-idf-svc = "0.52"
+anyhow = "1.0.102"
+clone-macro = "1.0.0"
 esp-idf-hal = "0.46.2"
+esp-idf-svc = "0.52"
 log = "0.4"
+uuid = "1.23.0"
 
 [build-dependencies]
 embuild = { version = "0.32", features = ["espidf"] }

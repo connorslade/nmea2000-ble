@@ -209,6 +209,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "clone-macro"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cc1611c3bfb806c7d6f2b534e02e79aba227111a8943f31bc41a0fedf63a8316"
+
+[[package]]
 name = "cmake"
 version = "0.1.58"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -979,10 +985,13 @@ dependencies = [
 name = "nmea2000-ble"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "clone-macro",
  "embuild 0.32.0",
  "esp-idf-hal",
  "esp-idf-svc",
  "log",
+ "uuid",
 ]
 
 [[package]]
@@ -1444,6 +1453,16 @@ name = "unicode-xid"
 version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
+
+[[package]]
+name = "uuid"
+version = "1.23.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5ac8b6f42ead25368cf5b098aeb3dc8a1a2c05a3eee8a9a1a68c640edbfc79d9"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
 
 [[package]]
 name = "version_check"
