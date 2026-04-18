@@ -2,7 +2,10 @@ use std::thread;
 
 use anyhow::Result;
 use esp_idf_hal::{
-    can::{CAN, CanConfig, CanDriver, Flags, Frame, config::Timing},
+    can::{
+        CAN, CanConfig, CanDriver,
+        config::{Filter, Timing},
+    },
     delay,
     gpio::{InputPin, OutputPin},
 };
@@ -13,16 +16,11 @@ pub fn init(
     rx: impl InputPin + 'static,
     tx: impl OutputPin + 'static,
 ) -> Result<()> {
-    let config = CanConfig::new().timing(Timing::B250K);
+    let config = CanConfig::new()
+        .timing(Timing::B250K)
+        .filter(Filter::extended_allow_all());
     let mut can = CanDriver::new(can, tx, rx, &config)?;
     can.start()?;
-
-    info!("Sending CAN frame");
-    can.transmit(
-        &Frame::new(100, Flags::None.into(), &[1, 2, 3, 4]).unwrap(),
-        delay::BLOCK,
-    )?;
-    info!("Sent CAN frame");
 
     thread::spawn(move || {
         loop {
