@@ -2,6 +2,7 @@ import Toybox.Application;
 import Toybox.Lang;
 import Toybox.WatchUi;
 import Toybox.Math;
+import Toybox.Graphics;
 
 class App extends Application.AppBase {
     function initialize() {
@@ -24,6 +25,10 @@ const TAU = Math.PI * 2.0;
 const PI_FRAC_2 = Math.PI / 2.0;
 const PI_2_FRAC_3 = (Math.PI * 2.0) / 3.0;
 
+const RED = Graphics.createColor(255, 0xE7, 0x25, 0x2E);  
+const GREEN = Graphics.createColor(255, 0x06, 0xA8, 0x4F);
+const DARK_GRAY = Graphics.createColor(255, 0x32, 0x32, 0x32);
+
 class View extends WatchUi.View {
     var angle = 0.0;
 
@@ -40,37 +45,52 @@ class View extends WatchUi.View {
         var cx = w / 2;
         var cy = h / 2;
 
-        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
-        dc.setPenWidth(5);
+        dc.setPenWidth(cx * 0.1);
+        dc.setColor(GREEN, Graphics.COLOR_BLACK);
+        dc.drawArc(cx, cy, cx, Graphics.ARC_COUNTER_CLOCKWISE, 30, 70);
+        dc.setColor(RED, Graphics.COLOR_BLACK);
+        dc.drawArc(cx, cy, cx, Graphics.ARC_COUNTER_CLOCKWISE, 110, 150);
 
-        for (var i = 0; i < 12; i++) {
-            var t = i / 12.0;
+        dc.setPenWidth(5);
+        for (var i = 0; i < 24; i++) {
+            var t = i / 24.0;
             var θ = t * TAU;
             var x = Math.cos(θ + PI_FRAC_2);
             var y = Math.sin(θ + PI_FRAC_2);
 
-            dc.drawLine(
-                cx + x * cx,
-                cy + y * cy,
-                cx + x * cx * 0.95,
-                cy + y * cy * 0.95
-            );
-            // dc.fillCircle(cx + x * cx * 0.95, cy + y * cy * 0.95, 0.05);
+            if (i % 2 == 0) {
+                dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+                var degree = Math.round(Math.toDegrees(θ - Math.PI))
+                    .toNumber()
+                    .abs();
+                if (degree <= 120) {
+                    dc.drawText(
+                        cx + x * cx * 0.8,
+                        cy + y * cy * 0.8,
+                        Graphics.FONT_XTINY,
+                        degree,
+                        Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+                    );
+                }
 
-            var degree = Math.round(Math.toDegrees(θ - Math.PI))
-                .toNumber()
-                .abs();
-            if (degree <= 120) {
-                dc.drawText(
-                    cx + x * cx * 0.8,
-                    cy + y * cy * 0.8,
-                    Graphics.FONT_XTINY,
-                    degree,
-                    Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+                dc.drawLine(
+                    cx + x * cx,
+                    cy + y * cy,
+                    cx + x * cx * 0.95,
+                    cy + y * cy * 0.95
+                );
+            } else {
+                dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+                dc.drawLine(
+                    cx + x * cx,
+                    cy + y * cy,
+                    cx + x * cx * 0.98,
+                    cy + y * cy * 0.98
                 );
             }
         }
 
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.drawText(
             cx,
             h * 0.75,
@@ -89,9 +109,13 @@ class View extends WatchUi.View {
             [cy - (y * r), cx + (x * r)],
             
         ]);
-        dc.fillCircle(cx, cy, r * 1.5);
+        dc.fillCircle(cx, cy, r * 2);
+        dc.setColor(DARK_GRAY, Graphics.COLOR_BLACK);
+        dc.drawCircle(cx, cy, r * 2);
     }
 }
+
+// drawArc(x as Lang.Numeric, y as Lang.Numeric, r as Lang.Numeric, attr as Graphics.ArcDirection, degreeStart as Lang.Numeric, degreeEnd as Lang.Numeric) as Void
 
 function getApp() as App {
     return Application.getApp() as App;

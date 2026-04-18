@@ -1,4 +1,4 @@
-use crate::{packets::Packet, util::bits};
+use crate::util::bits;
 
 /// PGN 60928 - ISO Address Claim
 #[derive(Debug)]
@@ -13,10 +13,10 @@ pub struct AddressClaim {
     pub arbitrary_address_capable: bool,
 }
 
-impl Packet for AddressClaim {
-    const PGN: u32 = 0xEE00;
+impl AddressClaim {
+    pub const PGN: u32 = 0xEE00;
 
-    fn deserialize(data: u64) -> Self {
+    pub fn deserialize(data: u64) -> Self {
         Self {
             unique_number: (data & bits(21)) as _,
             manufacturer_code: (data >> 21 & bits(11)) as _,
@@ -29,7 +29,7 @@ impl Packet for AddressClaim {
         }
     }
 
-    fn serialize(&self) -> u64 {
+    pub fn serialize(&self) -> u64 {
         (self.unique_number as u64)
             | (self.manufacturer_code as u64) << 21
             | (self.device_instance_lower as u64) << 32
@@ -38,5 +38,25 @@ impl Packet for AddressClaim {
             | (self.device_class as u64) << 49
             | (self.system_instance as u64) << 56
             | (self.arbitrary_address_capable as u64) << 60
+    }
+}
+
+/// PGN 59904 - ISO Request
+#[derive(Debug)]
+pub struct IsoRequest {
+    pgn: u32,
+}
+
+impl IsoRequest {
+    pub const PGN: u32 = 0xEA00;
+
+    pub fn deserialize(data: u64) -> Self {
+        Self {
+            pgn: (data & bits(24)) as _,
+        }
+    }
+
+    pub fn serialize(&self) -> u64 {
+        self.pgn as _
     }
 }

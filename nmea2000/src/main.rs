@@ -8,7 +8,7 @@ use socketcan::{
 
 use crate::packets::{Packet, handshake::AddressClaim};
 
-mod packets;
+pub mod packets;
 mod util;
 
 fn main() -> Result<()> {
@@ -30,14 +30,17 @@ fn main() -> Result<()> {
 
                 let header = Header::deserialize(id.as_raw());
                 let data = u64::from_le_bytes(*frame.data().as_array().unwrap());
+                let packet = Packet::deserialize(header.pgn, data);
                 println!("{header:?}: {data:X}");
 
-                match header.pgn {
-                    AddressClaim::PGN => {
-                        let packet = AddressClaim::deserialize(data);
-                        println!("{packet:?}");
+                let Some(packet) = packet else {
+                    continue;
+                };
 
-                        let header = Header::new::<AddressClaim>(6, 11);
+                println!("{packet:?}");
+                match packet {
+                    Packet::AddressClaim(_) => {
+                        let header = Header::new(AddressClaim::PGN, 6, 11);
                         let frame = AddressClaim {
                             unique_number: 1824691,
                             manufacturer_code: 2000,
@@ -56,7 +59,7 @@ fn main() -> Result<()> {
                             .unwrap(),
                         )?;
                     }
-                    _ => continue,
+                    _ => {}
                 }
             }
             Err(err) => eprintln!("{err}"),
@@ -72,11 +75,11 @@ struct Header {
 }
 
 impl Header {
-    pub fn new<P: Packet>(priority: u8, source: u8) -> Self {
+    pub fn new(pgn: u32, priority: u8, source: u8) -> Self {
         Self {
             priority,
             source,
-            pgn: P::PGN,
+            pgn,
         }
     }
 
@@ -99,7 +102,7 @@ impl Header {
 
     fn serialize(&self) -> u32 {
         let data_page = (self.pgn >> 16) & 1;
-        let pdu_format = ((self.pgn >> 8) & 0xFF) as u32;
+        let pdu_format = (self.pgn >> 8) & 0xFF;
         let pdu_specific = if pdu_format < 0xF0 {
             0xFF
         } else {
