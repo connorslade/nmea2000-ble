@@ -1,9 +1,9 @@
-use std::{mem, thread};
+use std::{mem, sync::Arc, thread};
 
 use anyhow::Result;
 use esp_idf_hal::{
     can::{
-        CAN, CanConfig, CanDriver, Flags, Frame,
+        CAN, CanConfig, CanDriver,
         config::{Filter, Timing},
     },
     delay,
@@ -13,7 +13,10 @@ use esp_idf_hal::{
 use log::{error, info};
 use nmea2000::{Header, packets::Packet};
 
+use crate::app::App;
+
 pub fn init(
+    app: Arc<App>,
     can: CAN<'static>,
     rx: impl InputPin + 'static,
     tx: impl OutputPin + 'static,
@@ -24,13 +27,6 @@ pub fn init(
     let mut can = CanDriver::new(can, tx, rx, &config)?;
     can.start()?;
 
-    info!("Transmitting");
-    can.transmit(
-        &Frame::new(418316043, Flags::Extended.into(), &[0, 1, 2, 3, 4, 5, 6, 7]).unwrap(),
-        delay::BLOCK,
-    )?;
-
-    info!("Receiving");
     thread::spawn(move || {
         loop {
             match can.receive(delay::BLOCK) {
@@ -39,9 +35,8 @@ pub fn init(
 
                     let header = Header::deserialize(frame.identifier);
                     let packet = Packet::deserialize(header.pgn, frame.data);
-                    if let Some(packet) = packet {
-                        info!("{packet:?}");
-                    }
+                    let Some(packet) = packet else { continue };
+                    on_packet(&app, packet);
                 }
                 Err(err) => error!("CAN receive error: {err}"),
             }
@@ -50,4 +45,22 @@ pub fn init(
 
     info!("Initialized CAN");
     Ok(())
+}
+
+fn on_packet(app: &App, packet: Packet) {
+    match packet {
+        Packet::IsoRequest(packet) => {
+            info!("Request for PGN {}", packet.pgn);
+        }
+        Packet::PositionRapidUpdate(packet) => {
+            let mut boat = app.boat();
+            boat.latitude = packet.latitude;
+            boat.longitude = packet.longitude;
+        }
+        Packet::CogSogRapidUpdate(packet) => {
+            let mut boat = app.boat();
+            boat.speed_over_ground = packet.sog;
+        }
+        _ => {}
+    }
 }

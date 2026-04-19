@@ -25,8 +25,10 @@ use uuid::uuid;
 
 use characteristics::CharacteristicHandles;
 
+use crate::{app::App, ble::characteristics::Characteristic};
+
 const APP_ID: u16 = 0;
-const SERVICE: u128 = uuid!("69da49f6-9646-4231-9d79-02b08a41e5b6").as_u128();
+const SERVICE: u128 = uuid!("76e20500-da73-4971-bb03-6105e39db3d6").as_u128();
 
 mod characteristics {
     use std::sync::atomic::{AtomicU16, Ordering};
@@ -34,14 +36,19 @@ mod characteristics {
     use esp_idf_svc::bt::BtUuid;
     use uuid::uuid;
 
-    pub const ALL: &[u128] = &[WIND, SPEED];
+    pub const ALL: &[u128] = &[POSITION, SPEED];
 
-    pub const WIND: u128 = uuid!("300b2aec-a094-43fb-98ff-04917cf7a2fb").as_u128();
+    pub const POSITION: u128 = uuid!("300b2aec-a094-43fb-98ff-04917cf7a2fb").as_u128();
     pub const SPEED: u128 = uuid!("d948b9e5-6626-4d41-8967-c4dca26db1fd").as_u128();
+
+    pub enum Characteristic {
+        Position,
+        Speed,
+    }
 
     #[derive(Default)]
     pub struct CharacteristicHandles {
-        wind: AtomicU16,
+        position: AtomicU16,
         speed: AtomicU16,
     }
 
@@ -49,23 +56,33 @@ mod characteristics {
         pub fn init(&self, char_uuid: BtUuid, attr_handle: u16) {
             let uuid = u128::from_ne_bytes(*char_uuid.as_bytes().as_array::<16>().unwrap());
             match uuid {
-                WIND => self.wind.store(attr_handle, Ordering::Relaxed),
+                POSITION => self.position.store(attr_handle, Ordering::Relaxed),
                 SPEED => self.speed.store(attr_handle, Ordering::Relaxed),
                 _ => unreachable!(),
+            }
+        }
+
+        pub fn characteristic(&self, handle: u16) -> Option<Characteristic> {
+            if handle == self.position.load(Ordering::Relaxed) {
+                Some(Characteristic::Position)
+            } else if handle == self.speed.load(Ordering::Relaxed) {
+                Some(Characteristic::Speed)
+            } else {
+                None
             }
         }
     }
 }
 
 #[derive(Clone)]
-struct Bluetooth {
+pub struct Bluetooth {
     gap: Arc<EspBleGap<'static, Ble, Arc<BtDriver<'static, Ble>>>>,
     gatts: Arc<EspGatts<'static, Ble, Arc<BtDriver<'static, Ble>>>>,
     handles: Arc<CharacteristicHandles>,
     clients: Arc<Mutex<HashSet<u16>>>,
 }
 
-pub fn init(modem: Modem<'static>) -> Result<()> {
+pub fn init(app: Arc<App>, modem: Modem<'static>) -> Result<()> {
     let nvs = EspDefaultNvsPartition::take()?;
     let driver = Arc::new(BtDriver::<Ble>::new(modem, Some(nvs))?);
 
@@ -76,7 +93,14 @@ pub fn init(modem: Modem<'static>) -> Result<()> {
         clients: Arc::new(Mutex::new(HashSet::new())),
     };
 
-    bt.gap.set_device_name("NMEA2000").unwrap();
+    bt.gap.subscribe(clone!([bt], move |event| {
+        if let BleGapEvent::AdvertisingConfigured(_) = event {
+            bt.gap.start_advertising().unwrap();
+            info!("Advertising started");
+        }
+    }))?;
+
+    bt.gap.set_device_name("windlink").unwrap();
     bt.gap
         .set_adv_conf(&AdvConfiguration {
             include_name: true,
@@ -87,15 +111,9 @@ pub fn init(modem: Modem<'static>) -> Result<()> {
             ..Default::default()
         })
         .unwrap();
-    bt.gap.subscribe(clone!([bt], move |event| {
-        if let BleGapEvent::AdvertisingConfigured(_) = event {
-            bt.gap.start_advertising().unwrap();
-            info!("Advertising started");
-        }
-    }))?;
 
     bt.gatts
-        .subscribe(clone!([bt], move |(gatt_if, event)| match event {
+        .subscribe(clone!([app, bt], move |(gatt_if, event)| match event {
             GattsEvent::ServiceRegistered { app_id, .. } if app_id == APP_ID => {
                 let service = GattServiceId {
                     id: GattId {
@@ -104,7 +122,7 @@ pub fn init(modem: Modem<'static>) -> Result<()> {
                     },
                     is_primary: true,
                 };
-                bt.gatts.create_service(gatt_if, &service, 3).unwrap();
+                bt.gatts.create_service(gatt_if, &service, 10).unwrap();
             }
             GattsEvent::ServiceCreated { service_handle, .. } => {
                 bt.gatts.start_service(service_handle).unwrap();
@@ -141,16 +159,35 @@ pub fn init(modem: Modem<'static>) -> Result<()> {
                 handle,
                 ..
             } => {
-                let mut rsp = GattResponse::new();
-                rsp.attr_handle(handle).value(b"hello world!").unwrap();
+                let Some(characteristic) = bt.handles.characteristic(handle) else {
+                    return;
+                };
+
+                let mut response = GattResponse::new();
+                response.attr_handle(handle);
+
+                let boat = app.boat();
+                match characteristic {
+                    Characteristic::Position => {
+                        let msg = format!("{}, {}", boat.longitude, boat.latitude);
+                        response.value(msg.as_bytes()).unwrap();
+                    }
+                    Characteristic::Speed => {
+                        response
+                            .value(boat.speed_over_ground.to_string().as_bytes())
+                            .unwrap();
+                    }
+                }
+
                 bt.gatts
-                    .send_response(gatt_if, conn_id, trans_id, GattStatus::Ok, Some(&rsp))
+                    .send_response(gatt_if, conn_id, trans_id, GattStatus::Ok, Some(&response))
                     .unwrap();
             }
             _ => {}
         }))?;
 
     bt.gatts.register_app(APP_ID)?;
+    app.bt.lock().unwrap().replace(bt);
     info!("Initialized BLE");
     Ok(())
 }

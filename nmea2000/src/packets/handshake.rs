@@ -44,7 +44,7 @@ impl AddressClaim {
 /// PGN 59904 - ISO Request
 #[derive(Debug)]
 pub struct IsoRequest {
-    pgn: u32,
+    pub pgn: u32,
 }
 
 impl IsoRequest {

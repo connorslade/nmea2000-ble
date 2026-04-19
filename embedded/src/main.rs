@@ -1,7 +1,12 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use esp_idf_hal::peripherals::Peripherals;
 use esp_idf_svc::log::EspLogger;
 
+use crate::app::App;
+
+mod app;
 mod ble;
 mod can;
 
@@ -12,8 +17,9 @@ fn main() -> Result<()> {
     let peripherals = Peripherals::take()?;
     let pins = peripherals.pins;
 
-    ble::init(peripherals.modem)?;
-    can::init(peripherals.can, pins.gpio4, pins.gpio5)?;
+    let app = Arc::new(App::default());
+    ble::init(app.clone(), peripherals.modem)?;
+    can::init(app, peripherals.can, pins.gpio4, pins.gpio5)?;
 
     loop {
         std::thread::park()
