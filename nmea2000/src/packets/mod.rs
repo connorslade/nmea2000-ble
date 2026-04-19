@@ -28,7 +28,8 @@ macro_rules! parse_packet {
 }
 
 impl Packet {
-    pub fn deserialize(pgn: u32, data: u64) -> Option<Self> {
+    pub fn deserialize(pgn: u32, data: [u8; 8]) -> Option<Self> {
+        let data = u64::from_le_bytes(data);
         parse_packet!(
             pgn,
             data,

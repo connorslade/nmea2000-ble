@@ -25,12 +25,13 @@ const TAU = Math.PI * 2.0;
 const PI_FRAC_2 = Math.PI / 2.0;
 const PI_2_FRAC_3 = (Math.PI * 2.0) / 3.0;
 
-const RED = Graphics.createColor(255, 0xE7, 0x25, 0x2E);  
-const GREEN = Graphics.createColor(255, 0x06, 0xA8, 0x4F);
+const RED = Graphics.createColor(255, 0xe7, 0x25, 0x2e);
+const GREEN = Graphics.createColor(255, 0x06, 0xa8, 0x4f);
 const DARK_GRAY = Graphics.createColor(255, 0x32, 0x32, 0x32);
 
 class View extends WatchUi.View {
     var angle = 0.0;
+    var speed = 0.0;
 
     function initialize() {
         View.initialize();
@@ -69,7 +70,8 @@ class View extends WatchUi.View {
                         cy + y * cy * 0.8,
                         Graphics.FONT_XTINY,
                         degree,
-                        Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+                        Graphics.TEXT_JUSTIFY_CENTER |
+                            Graphics.TEXT_JUSTIFY_VCENTER
                     );
                 }
 
@@ -93,10 +95,17 @@ class View extends WatchUi.View {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.drawText(
             cx,
-            h * 0.75,
-            Graphics.FONT_LARGE,
-            "12.3",
+            h * 0.7,
+            font(100),
+            speed.format("%.1f"),
             Graphics.TEXT_JUSTIFY_CENTER
+        );
+        dc.drawText(
+            cx,
+            h * 0.7 + 95,
+            font(20),
+            "KTS",
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
         );
 
         var x = Math.cos(angle - PI_FRAC_2);
@@ -105,14 +114,20 @@ class View extends WatchUi.View {
         var l = cx * 0.9;
         dc.fillPolygon([
             [cx + x * l, cy + y * l],
-            [cy + (y * r), cx - (x * r)],
-            [cy - (y * r), cx + (x * r)],
-            
+            [cy + y * r, cx - x * r],
+            [cy - y * r, cx + x * r],
         ]);
         dc.fillCircle(cx, cy, r * 2);
         dc.setColor(DARK_GRAY, Graphics.COLOR_BLACK);
         dc.drawCircle(cx, cy, r * 2);
     }
+}
+
+function font(size as Number) as Graphics.VectorFont {
+    return Graphics.getVectorFont({
+        :face => ["RobotoCondensedBold", "RobotoRegular"],
+        :size => size,
+    });
 }
 
 // drawArc(x as Lang.Numeric, y as Lang.Numeric, r as Lang.Numeric, attr as Graphics.ArcDirection, degreeStart as Lang.Numeric, degreeEnd as Lang.Numeric) as Void

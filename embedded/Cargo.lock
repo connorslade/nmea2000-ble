@@ -982,6 +982,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "nmea2000"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+]
+
+[[package]]
 name = "nmea2000-ble"
 version = "0.1.0"
 dependencies = [
@@ -991,6 +998,7 @@ dependencies = [
  "esp-idf-hal",
  "esp-idf-svc",
  "log",
+ "nmea2000",
  "uuid",
 ]
 

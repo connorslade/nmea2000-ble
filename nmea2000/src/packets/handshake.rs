@@ -60,3 +60,18 @@ impl IsoRequest {
         self.pgn as _
     }
 }
+
+// /// PGN 126996 - Product Information
+// pub struct ProductInformation {}
+
+// impl ProductInformation {
+//     pub const PGN: u32 = 0x1F014;
+
+//     pub fn deserialize(data: u64) -> Self {
+//         todo!()
+//     }
+
+//     pub fn serialize(&self) -> u64 {
+//         0
+//     }
+// }
