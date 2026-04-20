@@ -3,7 +3,7 @@ use std::{mem, sync::Arc, thread};
 use anyhow::Result;
 use esp_idf_hal::{
     can::{
-        CAN, CanConfig, CanDriver,
+        CAN, CanConfig, CanDriver, Frame,
         config::{Filter, Timing},
     },
     delay,
@@ -31,7 +31,7 @@ pub fn init(
         loop {
             match can.receive(delay::BLOCK) {
                 Ok(frame) => {
-                    let frame = unsafe { mem::transmute::<_, twai_message_t>(frame) };
+                    let frame = unsafe { mem::transmute::<Frame, twai_message_t>(frame) };
 
                     let header = Header::deserialize(frame.identifier);
                     let packet = Packet::deserialize(header.pgn, frame.data);
@@ -53,13 +53,10 @@ fn on_packet(app: &App, packet: Packet) {
             info!("Request for PGN {}", packet.pgn);
         }
         Packet::PositionRapidUpdate(packet) => {
-            let mut boat = app.boat();
-            boat.latitude = packet.latitude;
-            boat.longitude = packet.longitude;
+            app.position_update(packet.latitude, packet.longitude);
         }
         Packet::CogSogRapidUpdate(packet) => {
-            let mut boat = app.boat();
-            boat.speed_over_ground = packet.sog;
+            app.speed_update(packet.sog);
         }
         _ => {}
     }
