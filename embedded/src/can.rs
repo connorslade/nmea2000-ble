@@ -3,15 +3,18 @@ use std::{mem, sync::Arc, thread};
 use anyhow::Result;
 use esp_idf_hal::{
     can::{
-        CAN, CanConfig, CanDriver, Frame,
+        CAN, CanConfig, CanDriver, Flags, Frame,
         config::{Filter, Timing},
     },
     delay,
     gpio::{InputPin, OutputPin},
-    sys::twai_message_t,
+    sys::{esp_random, twai_message_t},
 };
 use log::{error, info};
-use nmea2000::{Header, packets::Packet};
+use nmea2000::{
+    Header,
+    packets::{Packet, handshake::AddressClaim},
+};
 
 use crate::app::App;
 
@@ -27,6 +30,17 @@ pub fn init(
     let mut can = CanDriver::new(can, tx, rx, &config)?;
     can.start()?;
 
+    let (header, frame) = address_claim();
+    can.transmit(
+        &Frame::new(
+            header.serialize(),
+            Flags::Extended.into(),
+            &frame.serialize().to_le_bytes(),
+        )
+        .unwrap(),
+        delay::BLOCK,
+    )?;
+
     thread::spawn(move || {
         loop {
             match can.receive(delay::BLOCK) {
@@ -36,6 +50,7 @@ pub fn init(
                     let header = Header::deserialize(frame.identifier);
                     let packet = Packet::deserialize(header.pgn, frame.data);
                     let Some(packet) = packet else { continue };
+                    info!("{packet:?}");
                     on_packet(&app, packet);
                 }
                 Err(err) => error!("CAN receive error: {err}"),
@@ -58,6 +73,25 @@ fn on_packet(app: &App, packet: Packet) {
         Packet::CogSogRapidUpdate(packet) => {
             app.speed_update(packet.sog);
         }
+        Packet::WindData(packet) => {
+            app.wind_update(packet.wind_speed, packet.wind_angle);
+        }
         _ => {}
     }
+}
+
+fn address_claim() -> (Header, AddressClaim) {
+    let header = Header::new(AddressClaim::PGN, 6, 11);
+    let frame = AddressClaim {
+        unique_number: unsafe { esp_random() } & 0x1FFFFF,
+        manufacturer_code: 2000,
+        device_instance_lower: 0,
+        device_instance_upper: 0,
+        device_function: 150,
+        device_class: 80,
+        system_instance: 0,
+        arbitrary_address_capable: false,
+    };
+
+    (header, frame)
 }

@@ -39,21 +39,24 @@ pub mod characteristics {
     use esp_idf_svc::bt::BtUuid;
     use uuid::uuid;
 
-    pub const ALL: &[u128] = &[POSITION, SPEED];
+    pub const ALL: &[u128] = &[POSITION, SPEED, WIND];
 
     pub const POSITION: u128 = uuid!("300b2aec-a094-43fb-98ff-04917cf7a2fb").as_u128();
     pub const SPEED: u128 = uuid!("d948b9e5-6626-4d41-8967-c4dca26db1fd").as_u128();
+    pub const WIND: u128 = uuid!("91331b1c-3132-4197-aa43-b86b7df421f1").as_u128();
 
     #[derive(Debug, PartialEq, Eq, Hash)]
     pub enum Characteristic {
         Position,
         Speed,
+        Wind,
     }
 
     #[derive(Default)]
     pub struct CharacteristicHandles {
         pub position: AtomicU16,
         pub speed: AtomicU16,
+        pub wind: AtomicU16,
     }
 
     impl CharacteristicHandles {
@@ -62,6 +65,7 @@ pub mod characteristics {
             match uuid {
                 POSITION => self.position.store(attr_handle, Ordering::Relaxed),
                 SPEED => self.speed.store(attr_handle, Ordering::Relaxed),
+                WIND => self.wind.store(attr_handle, Ordering::Relaxed),
                 _ => unreachable!(),
             }
         }
@@ -71,6 +75,8 @@ pub mod characteristics {
                 Some(Characteristic::Position)
             } else if handle == self.speed.load(Ordering::Relaxed) {
                 Some(Characteristic::Speed)
+            } else if handle == self.wind.load(Ordering::Relaxed) {
+                Some(Characteristic::Wind)
             } else {
                 None
             }
@@ -80,6 +86,7 @@ pub mod characteristics {
             match characteristic {
                 Characteristic::Position => self.position.load(Ordering::Relaxed),
                 Characteristic::Speed => self.speed.load(Ordering::Relaxed),
+                Characteristic::Wind => self.wind.load(Ordering::Relaxed),
             }
         }
     }

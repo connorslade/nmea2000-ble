@@ -3,10 +3,7 @@
 use anyhow::{Context, Result};
 use socketcan::{CanInterface, CanSocket, Socket, available_interfaces};
 
-use nmea2000::{
-    Header,
-    packets::{Packet, handshake::AddressClaim},
-};
+use nmea2000::{Header, packets::Packet};
 
 fn main() -> Result<()> {
     let available = available_interfaces()?;
@@ -18,8 +15,7 @@ fn main() -> Result<()> {
     iface.set_bitrate(250_000, None)?;
     iface.bring_up()?;
 
-    let header = Header::new(AddressClaim::PGN, 6, 11);
-    dbg!(header.serialize());
+    // let header = Header::new(AddressClaim::PGN, 6, 11);
     // let frame = AddressClaim {
     //     unique_number: 1824692,
     //     manufacturer_code: 2000,
@@ -43,8 +39,8 @@ fn main() -> Result<()> {
             Ok(frame) => {
                 let header = Header::deserialize(frame.can_id);
                 let packet = Packet::deserialize(header.pgn, frame.data);
-
                 // println!("{header:?}: {data:X}");
+
                 if let Some(packet) = packet {
                     println!("{packet:?}");
                 }

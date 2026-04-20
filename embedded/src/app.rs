@@ -12,6 +12,8 @@ pub struct App {
 pub struct Boat {
     pub latitude: i32,
     pub longitude: i32,
+    pub wind_speed: u16,
+    pub wind_angle: u16,
     pub speed_over_ground: u16,
 }
 
@@ -38,6 +40,13 @@ impl App {
         self.bt()
             .notify(Characteristic::Speed, &boat.speed_packet());
     }
+
+    pub fn wind_update(&self, speed: u16, angle: u16) {
+        let mut boat = self.boat();
+        boat.wind_speed = speed;
+        boat.wind_angle = angle;
+        self.bt().notify(Characteristic::Wind, &boat.wind_packet());
+    }
 }
 
 impl Boat {
@@ -45,6 +54,7 @@ impl Boat {
         match characteristic {
             Characteristic::Position => self.position_packet(),
             Characteristic::Speed => self.speed_packet(),
+            Characteristic::Wind => self.wind_packet(),
         }
     }
 
@@ -56,5 +66,11 @@ impl Boat {
 
     fn speed_packet(&self) -> Vec<u8> {
         self.speed_over_ground.to_string().as_bytes().to_vec()
+    }
+
+    fn wind_packet(&self) -> Vec<u8> {
+        format!("{}, {}", self.wind_speed, self.wind_angle)
+            .as_bytes()
+            .to_vec()
     }
 }
