@@ -14,7 +14,7 @@ use esp_idf_hal::{
 
 pub const SECTOR_SIZE: u32 = 0x1000;
 
-pub const UPDATE_REGION: (u32, u32) = (0x600000, 0x200000);
+pub const UPDATE_REGION: (u32, u32) = (0x500000, 0x300000);
 
 pub struct SpiFlash {
     chip: NonNull<sys::esp_flash_t>,

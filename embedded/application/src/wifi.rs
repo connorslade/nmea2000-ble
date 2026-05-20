@@ -62,8 +62,9 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
         clone!([app], move |mut req| {
             let flash = app.flash.force_lock();
 
-            let mut address = UPDATE_REGION.0;
-            flash.erase_region(UPDATE_REGION.0, UPDATE_REGION.1)?;
+            let (base, len) = UPDATE_REGION;
+            let mut address = base;
+            flash.erase_region(base, len)?;
 
             let mut buffer = [0_u8; 512];
 

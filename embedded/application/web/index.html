@@ -65,7 +65,7 @@
                     }),
                     (l.onload = () => {
                         if (200 === l.status) {
-                            let e = 5;
+                            let e = 10;
                             message.innerText = `Update successful. Reloading in ${e}s...`;
                             const s = setInterval(() => {
                                 ((message.innerText = `Update successful. Reloading in ${--e}s...`),

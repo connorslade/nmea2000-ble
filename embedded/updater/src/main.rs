@@ -1,11 +1,10 @@
 use anyhow::Result;
 use common::{SpiFlash, flash::UPDATE_REGION};
 use esp_idf_hal::peripherals::Peripherals;
-use esp_idf_svc::{log::EspLogger, ota::EspOta};
+use esp_idf_svc::ota::EspOta;
 
 fn main() -> Result<()> {
     esp_idf_svc::sys::link_patches();
-    EspLogger::initialize_default();
 
     let peripherals = Peripherals::take()?;
     let pins = peripherals.pins;
