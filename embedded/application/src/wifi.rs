@@ -8,6 +8,7 @@ use std::{
 
 use anyhow::{Error, Result};
 use clone_macro::clone;
+use common::flash::UPDATE_REGION;
 use esp_idf_hal::{delay::FreeRtos, io::Write as _, modem::WifiModem, sys::twai_message_t};
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
@@ -59,23 +60,23 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
         "/update",
         Method::Post,
         clone!([app], move |mut req| {
-            const UPDATE_SIZE: u32 = 0x200000;
-            const FLASH_SIZE: u32 = 0x7A1200;
-
             let flash = app.flash.force_lock();
-            flash.erase_region(FLASH_SIZE - UPDATE_SIZE, UPDATE_SIZE)?;
 
-            let mut address = FLASH_SIZE - UPDATE_SIZE;
-            let mut buffer = [0; 512];
+            let mut address = UPDATE_REGION.0;
+            flash.erase_region(UPDATE_REGION.0, UPDATE_REGION.1)?;
+
+            let mut buffer = [0_u8; 512];
+
             loop {
                 let size = req.read(&mut buffer)?;
-                if size == 0 || address >= FLASH_SIZE {
+                if size == 0 {
                     break;
                 }
 
                 flash.write(address, &buffer[..size])?;
                 address += size as u32;
             }
+
             drop(flash);
 
             let mut ota = EspOta::new()?;
@@ -86,6 +87,7 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
                 FreeRtos::delay_ms(1000);
                 esp_idf_hal::reset::restart();
             });
+
             Ok(())
         }),
     )?;

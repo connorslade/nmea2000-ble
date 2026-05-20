@@ -4,6 +4,16 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>windlink</title>
+        <style>
+            #logs {
+                overflow-x: scroll;
+            }
+
+            #progress {
+                display: none;
+                width: 160px;
+            }
+        </style>
     </head>
     <body>
         <h1>windlink</h1>
@@ -13,8 +23,18 @@
         <pre id="logs"></pre>
 
         <h2>Firmware Update</h2>
-        <button id="update">Enter boot menu</button>
-        <p id="updateStatus"></p>
+        <p>
+            Be careful here, uploading into an invalid image will require
+            physical board access to recover from.
+        </p>
+
+        <button disabled id="flash">Flash</button>
+        <input accept=".bin" id="bin" type="file" /><br /><progress
+            id="progress"
+            max="100"
+            value="0"
+        ></progress>
+        <p id="message"></p>
     </body>
 
     <script>
@@ -25,22 +45,42 @@
         fetchLogs();
         const fetchLogsTask = setInterval(fetchLogs, 3000);
 
-        update.addEventListener("click", () => {
-            update.disabled = true;
-            clearInterval(fetchLogsTask);
-            fetch("/update", {
-                method: "POST",
-            }).then(() => {
-                let duration = 5;
-                updateStatus.innerText = `Entered boot mode. Reloading in ${duration}s...`;
-                const interval = setInterval(() => {
-                    updateStatus.innerText = `Entered boot mode. Reloading in ${--duration}s...`;
-                    if (duration <= 0) {
-                        clearInterval(interval);
-                        location.reload();
-                    }
-                }, 1000);
-            });
-        });
+        (bin.addEventListener("change", () => {
+            flash.disabled = 0 === bin.files.length;
+        }),
+            flash.addEventListener("click", () => {
+                if (!bin.files.length) return alert("No file selected.");
+                var e = bin.files[0];
+                ((flash.disabled = !0),
+                    (progress.style.display = "block"),
+                    (progress.value = 0),
+                    (message.innerText = "Uploading... 0%"));
+                let l = new XMLHttpRequest();
+                (l.open("POST", "/update", !0),
+                    (l.upload.onprogress = (e) => {
+                        e.lengthComputable &&
+                            ((e = Math.round((e.loaded / e.total) * 100)),
+                            (progress.value = e),
+                            (message.innerText = `Uploading... ${e}%`));
+                    }),
+                    (l.onload = () => {
+                        if (200 === l.status) {
+                            let e = 5;
+                            message.innerText = `Update successful. Reloading in ${e}s...`;
+                            const s = setInterval(() => {
+                                ((message.innerText = `Update successful. Reloading in ${--e}s...`),
+                                    e <= 0 &&
+                                        (clearInterval(s), location.reload()));
+                            }, 1e3);
+                        } else
+                            ((message.innerText = "Update failed"),
+                                (flash.disabled = !1));
+                    }),
+                    (l.onerror = () => {
+                        ((message.innerText = "Error uploading file"),
+                            (flash.disabled = !1));
+                    }),
+                    l.send(e));
+            }));
     </script>
 </html>
