@@ -55,17 +55,40 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
         Ok(())
     })?;
 
-    http.fn_handler::<Error, _>("/update", Method::Post, |req| {
-        let mut ota = EspOta::new()?;
-        ota.factory_reset()?;
-        req.into_ok_response()?.flush()?;
+    http.fn_handler::<Error, _>(
+        "/update",
+        Method::Post,
+        clone!([app], move |mut req| {
+            const UPDATE_SIZE: u32 = 0x200000;
+            const FLASH_SIZE: u32 = 0x7A1200;
 
-        thread::spawn(|| {
-            FreeRtos::delay_ms(1000);
-            esp_idf_hal::reset::restart();
-        });
-        Ok(())
-    })?;
+            let flash = app.flash.force_lock();
+            flash.erase_region(FLASH_SIZE - UPDATE_SIZE, UPDATE_SIZE)?;
+
+            let mut address = FLASH_SIZE - UPDATE_SIZE;
+            let mut buffer = [0; 512];
+            loop {
+                let size = req.read(&mut buffer)?;
+                if size == 0 || address >= FLASH_SIZE {
+                    break;
+                }
+
+                flash.write(address, &buffer[..size])?;
+                address += size as u32;
+            }
+            drop(flash);
+
+            let mut ota = EspOta::new()?;
+            ota.factory_reset()?;
+            req.into_ok_response()?.flush()?;
+
+            thread::spawn(|| {
+                FreeRtos::delay_ms(1000);
+                esp_idf_hal::reset::restart();
+            });
+            Ok(())
+        }),
+    )?;
 
     http.fn_handler::<Error, _>(
         "/logs",

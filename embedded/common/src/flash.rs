@@ -109,3 +109,5 @@ impl Drop for SpiFlash {
         let _ = unsafe { sys::spi_bus_remove_flash_device(self.as_ptr()) };
     }
 }
+
+unsafe impl Send for SpiFlash {}

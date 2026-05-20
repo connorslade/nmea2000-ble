@@ -3,9 +3,11 @@ use std::{
     sync::{Arc, MappedMutexGuard, Mutex, MutexGuard, mpsc::SyncSender},
 };
 
+use anyhow::Result;
+use common::SpiFlash;
 use esp_idf_hal::sys::twai_message_t;
 use esp_idf_svc::{log::EspIdfLogger, nvs::EspDefaultNvsPartition};
-use log::{Log, Metadata, Record};
+use log::{Log, Metadata, Record, info};
 use nmea2000::packets::RawPacket;
 
 use crate::{
@@ -24,6 +26,7 @@ pub struct App {
     pub packets: Mutex<Vec<RawPacket>>,
 
     pub nvs: EspDefaultNvsPartition,
+    pub flash: Mutex<SpiFlash>,
 
     boat: Mutex<Boat>,
 }
@@ -47,8 +50,12 @@ pub struct MemoryLogger {
 }
 
 impl App {
-    pub fn new() -> Self {
-        Self {
+    pub fn new(flash: SpiFlash) -> Result<Self> {
+        let id = flash.read_id()?;
+        let size = flash.size()?;
+        info!("Connected to flash {{ id=0x{id:#08x}, size={size} }}");
+
+        Ok(Self {
             logs: Default::default(),
             bt: Default::default(),
             indicator: Default::default(),
@@ -56,9 +63,10 @@ impl App {
             packets: Default::default(),
 
             nvs: EspDefaultNvsPartition::take().unwrap(),
+            flash: Mutex::new(flash),
 
             boat: Default::default(),
-        }
+        })
     }
 
     pub fn boat(&self) -> MutexGuard<'_, Boat> {

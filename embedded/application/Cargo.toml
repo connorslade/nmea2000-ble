@@ -6,6 +6,7 @@ resolver = "2"
 
 [dependencies]
 nmea2000 = { path = "../../nmea2000" }
+common = { path = "../common" }
 
 anyhow = "1.0.102"
 clone-macro = "1.0.0"
@@ -18,7 +19,7 @@ uuid = "1.23.0"
 remote_component = { name = "espressif/mdns", version = "1.8.2" }
 
 [[package.metadata.esp-idf-sys.extra_components]]
-bindings_header = "extra_bindings.h"
+bindings_header = "../extra_bindings.h"
 
 [build-dependencies]
 embuild = { version = "0.32", features = ["espidf"] }

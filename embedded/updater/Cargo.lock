@@ -218,6 +218,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "common"
+version = "0.1.0"
+dependencies = [
+ "esp-idf-hal",
+]
+
+[[package]]
 name = "const_format"
 version = "0.2.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1488,6 +1495,7 @@ name = "updater"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "common",
  "embuild 0.32.0",
  "esp-idf-hal",
  "esp-idf-svc",
