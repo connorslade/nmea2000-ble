@@ -4,7 +4,7 @@ use std::{
 };
 
 use esp_idf_hal::sys::twai_message_t;
-use esp_idf_svc::nvs::EspDefaultNvsPartition;
+use esp_idf_svc::{log::EspIdfLogger, nvs::EspDefaultNvsPartition};
 use log::{Log, Metadata, Record};
 use nmea2000::packets::RawPacket;
 
@@ -43,6 +43,7 @@ pub enum IndicatorEvent {
 
 pub struct MemoryLogger {
     pub app: Arc<App>,
+    pub uart: EspIdfLogger<()>,
 }
 
 impl App {
@@ -130,6 +131,15 @@ impl Boat {
     }
 }
 
+impl MemoryLogger {
+    pub fn new(app: &Arc<App>) -> Self {
+        Self {
+            app: app.clone(),
+            uart: EspIdfLogger::new(()),
+        }
+    }
+}
+
 impl Log for MemoryLogger {
     fn enabled(&self, _metadata: &Metadata) -> bool {
         true
@@ -138,10 +148,10 @@ impl Log for MemoryLogger {
     fn log(&self, record: &Record) {
         let mut logs = self.app.logs.force_lock();
         logs.push_back(format!("{} {}", record.level(), record.args()));
+        (logs.len() > 30).then(|| logs.pop_front());
+        drop(logs);
 
-        while logs.len() > 30 {
-            logs.pop_front();
-        }
+        self.uart.log(record);
     }
 
     fn flush(&self) {}
