@@ -1,12 +1,20 @@
 #![feature(mapped_lock_guards)]
 #![feature(iter_intersperse)]
 
-use std::{sync::Arc, thread};
+use std::{
+    sync::Arc,
+    thread,
+    time::{Duration, Instant},
+};
 
 use anyhow::Result;
+use clone_macro::clone;
 use esp_idf_hal::peripherals::Peripherals;
 
-use crate::app::{App, MemoryLogger};
+use crate::{
+    app::{App, MemoryLogger},
+    ble::characteristics::Characteristic,
+};
 
 use common::SpiFlash;
 
@@ -38,6 +46,14 @@ fn main() -> Result<()> {
     let logger = Box::new(MemoryLogger::new(&app));
     log::set_logger(Box::leak(logger))?;
     log::set_max_level(log::LevelFilter::Info);
+
+    thread::spawn(clone!([app], move || {
+        loop {
+            let timer = Instant::now();
+            app.boat().notify(app.bt(), Characteristic::WindScreen);
+            thread::sleep(Duration::from_millis(100) - timer.elapsed());
+        }
+    }));
 
     wifi::init(app.clone(), wifi_modem)?;
     ble::init(app.clone(), ble_modem)?;

@@ -12,7 +12,7 @@ use nmea2000::packets::RawPacket;
 
 use crate::{
     ble::{Bluetooth, characteristics::Characteristic},
-    util::ForceLock,
+    util::{ForceLock, RollingAverage},
     wifi::WirelessClient,
 };
 
@@ -35,9 +35,9 @@ pub struct App {
 pub struct Boat {
     pub latitude: i32,
     pub longitude: i32,
-    pub wind_speed: u16,
-    pub wind_angle: u16,
-    pub speed_over_ground: u16,
+    pub wind_speed: RollingAverage<16>,
+    pub wind_angle: RollingAverage<16>,
+    pub speed_over_ground: RollingAverage<16>,
 }
 
 pub enum IndicatorEvent {
@@ -107,15 +107,13 @@ impl App {
 
     pub fn speed_update(&self, speed: u16) {
         let mut boat = self.boat();
-        boat.speed_over_ground = speed;
-        boat.notify(self.bt(), Characteristic::WindScreen);
+        boat.speed_over_ground.push(speed as f32);
     }
 
     pub fn wind_update(&self, speed: u16, angle: u16) {
         let mut boat = self.boat();
-        boat.wind_speed = speed;
-        boat.wind_angle = angle;
-        boat.notify(self.bt(), Characteristic::WindScreen);
+        boat.wind_speed.push(speed as f32);
+        boat.wind_angle.push(angle as f32);
     }
 }
 
@@ -132,9 +130,9 @@ impl Boat {
 
     fn wind_screen_packet(&self) -> Vec<u8> {
         let mut out = Vec::new();
-        out.extend(self.speed_over_ground.to_le_bytes());
-        out.extend(self.wind_speed.to_le_bytes());
-        out.extend(self.wind_angle.to_le_bytes());
+        out.extend((self.speed_over_ground.avg() as u16).to_le_bytes());
+        out.extend((self.wind_speed.avg() as u16).to_le_bytes());
+        out.extend((self.wind_angle.avg() as u16).to_le_bytes());
         out
     }
 }

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use common::{SpiFlash, flash::UPDATE_REGION};
-use esp_idf_hal::peripherals::Peripherals;
+use esp_idf_hal::{gpio::PinDriver, peripherals::Peripherals};
 use esp_idf_svc::ota::EspOta;
 
 fn main() -> Result<()> {
@@ -8,6 +8,8 @@ fn main() -> Result<()> {
 
     let peripherals = Peripherals::take()?;
     let pins = peripherals.pins;
+    let mut led = PinDriver::output(pins.gpio20)?;
+    led.set_high()?;
 
     let flash = SpiFlash::new(
         peripherals.spi2,
@@ -23,7 +25,6 @@ fn main() -> Result<()> {
 
     let mut address = UPDATE_REGION.0;
     let mut buffer = [0_u8; 512];
-
     while (address - UPDATE_REGION.0) < UPDATE_REGION.1 {
         flash.read(address, &mut buffer)?;
         address += buffer.len() as u32;
@@ -31,5 +32,6 @@ fn main() -> Result<()> {
     }
 
     update.complete()?;
+    led.set_low()?;
     esp_idf_hal::reset::restart();
 }

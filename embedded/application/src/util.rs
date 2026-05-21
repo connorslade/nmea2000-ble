@@ -45,3 +45,41 @@ impl Write for SharedStream {
         (&*self.stream).flush()
     }
 }
+
+pub struct RollingAverage<const N: usize> {
+    values: [f32; N],
+    index: usize,
+    full: bool,
+}
+
+impl<const N: usize> RollingAverage<N> {
+    pub fn new() -> Self {
+        Self {
+            values: [0.0; N],
+            index: 0,
+            full: false,
+        }
+    }
+
+    pub fn push(&mut self, value: f32) {
+        self.values[self.index] = value;
+        self.index += 1;
+
+        self.full |= self.index == N;
+        self.index = self.index % N;
+    }
+
+    pub fn avg(&self) -> f32 {
+        if self.full {
+            self.values.iter().sum::<f32>() / N as f32
+        } else {
+            self.values.iter().take(self.index).sum::<f32>() / self.index as f32
+        }
+    }
+}
+
+impl<const N: usize> Default for RollingAverage<N> {
+    fn default() -> Self {
+        Self::new()
+    }
+}

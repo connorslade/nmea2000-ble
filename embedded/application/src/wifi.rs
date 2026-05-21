@@ -67,7 +67,6 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
             flash.erase_region(base, len)?;
 
             let mut buffer = [0_u8; 512];
-
             loop {
                 let size = req.read(&mut buffer)?;
                 if size == 0 {
@@ -77,7 +76,6 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
                 flash.write(address, &buffer[..size])?;
                 address += size as u32;
             }
-
             drop(flash);
 
             let mut ota = EspOta::new()?;
@@ -88,7 +86,6 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
                 FreeRtos::delay_ms(1000);
                 esp_idf_hal::reset::restart();
             });
-
             Ok(())
         }),
     )?;
