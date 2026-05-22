@@ -8,7 +8,7 @@ use std::{
 
 use anyhow::{Error, Result};
 use clone_macro::clone;
-use common::flash::UPDATE_REGION;
+use common::flash::region;
 use esp_idf_hal::{delay::FreeRtos, io::Write as _, modem::WifiModem, sys::twai_message_t};
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
@@ -61,11 +61,9 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
         Method::Post,
         clone!([app], move |mut req| {
             let flash = app.flash.force_lock();
+            flash.erase_region(region::UPDATE)?;
 
-            let (base, len) = UPDATE_REGION;
-            let mut address = base;
-            flash.erase_region(base, len)?;
-
+            let mut address = region::UPDATE.start;
             let mut buffer = [0_u8; 512];
             loop {
                 let size = req.read(&mut buffer)?;
@@ -73,8 +71,17 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
                     break;
                 }
 
+                let remaining = region::UPDATE.end() - address;
+                let size = size.min(remaining as usize);
+
                 flash.write(address, &buffer[..size])?;
                 address += size as u32;
+
+                // In the case the upload exceeds the max program size
+                if address == region::UPDATE.end() {
+                    req.into_status_response(400)?.flush()?;
+                    return Ok(());
+                }
             }
             drop(flash);
 

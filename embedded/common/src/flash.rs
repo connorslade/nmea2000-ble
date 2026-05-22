@@ -14,10 +14,19 @@ use esp_idf_hal::{
 
 pub const SECTOR_SIZE: u32 = 0x1000;
 
-pub const UPDATE_REGION: (u32, u32) = (0x500000, 0x300000);
+pub mod region {
+    use super::*;
+
+    pub const UPDATE: Region = Region::new(0x500000, 0x300000);
+}
 
 pub struct SpiFlash {
     chip: NonNull<sys::esp_flash_t>,
+}
+
+pub struct Region {
+    pub start: u32,
+    pub len: u32,
 }
 
 impl SpiFlash {
@@ -90,8 +99,14 @@ impl SpiFlash {
         Ok(())
     }
 
-    pub fn erase_region(&self, start: u32, len: u32) -> Result<(), EspError> {
-        unsafe { EspError::convert(sys::esp_flash_erase_region(self.as_ptr(), start, len))? };
+    pub fn erase_region(&self, region: Region) -> Result<(), EspError> {
+        unsafe {
+            EspError::convert(sys::esp_flash_erase_region(
+                self.as_ptr(),
+                region.start,
+                region.len,
+            ))?
+        };
         Ok(())
     }
 
@@ -105,6 +120,16 @@ impl SpiFlash {
             ))?;
         }
         Ok(())
+    }
+}
+
+impl Region {
+    pub const fn new(start: u32, len: u32) -> Self {
+        Self { start, len }
+    }
+
+    pub fn end(&self) -> u32 {
+        self.start + self.len
     }
 }
 

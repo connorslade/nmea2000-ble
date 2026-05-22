@@ -1,5 +1,5 @@
 use anyhow::Result;
-use common::{SpiFlash, flash::UPDATE_REGION};
+use common::{SpiFlash, flash::region};
 use esp_idf_hal::{gpio::PinDriver, peripherals::Peripherals};
 use esp_idf_svc::ota::EspOta;
 
@@ -23,9 +23,9 @@ fn main() -> Result<()> {
     let mut ota = EspOta::new()?;
     let mut update = ota.initiate_update()?;
 
-    let mut address = UPDATE_REGION.0;
+    let mut address = region::UPDATE.start;
     let mut buffer = [0_u8; 512];
-    while (address - UPDATE_REGION.0) < UPDATE_REGION.1 {
+    while (address - region::UPDATE.start) < region::UPDATE.len {
         flash.read(address, &mut buffer)?;
         address += buffer.len() as u32;
         update.write(&buffer)?;
