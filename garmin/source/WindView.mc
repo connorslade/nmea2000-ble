@@ -1,3 +1,4 @@
+import Toybox.System;
 import Toybox.WatchUi;
 
 class WindView extends WatchUi.View {
@@ -64,34 +65,55 @@ class WindView extends WatchUi.View {
             }
         }
 
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+        var time = System.getClockTime();
+        var timeStr = time.hour.format("%02d") + ":" + time.min.format("%02d");
+        dc.drawText(
+            cx,
+            h - 35,
+            fontBold(30),
+            timeStr,
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER
+        );
+
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         var gap = 30.0;
         dc.drawText(
             cx - gap,
-            h * .7,
-            fontBolt(100),
+            h * 0.7,
+            fontBold(100),
             boat.speed.format("%.1f"),
             Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER
         );
+        dc.drawBitmap(
+            cx - gap - 26,
+            h * 0.7 + 35,
+            WatchUi.loadResource(Rez.Drawables.BoatIcon)
+        );
         dc.drawText(
-            cx - gap,
-            h * .7 + 45,
-            fontBolt(20),
+            cx - gap - 35,
+            h * 0.7 + 50,
+            fontBold(25),
             "KTS",
             Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER
         );
 
         dc.drawText(
             cx + gap,
-            h * .7,
-            fontBolt(100),
+            h * 0.7,
+            fontBold(100),
             boat.wind_speed.format("%.1f"),
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
         );
-        dc.drawText(
+        dc.drawBitmap(
             cx + gap,
-            h * .7 + 45,
-            fontBolt(20),
+            h * 0.7 + 35,
+            WatchUi.loadResource(Rez.Drawables.WindIcon)
+        );
+        dc.drawText(
+            cx + gap + 42,
+            h * 0.7 + 50,
+            fontBold(25),
             "KTS",
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER
         );
@@ -100,11 +122,21 @@ class WindView extends WatchUi.View {
         var y = Math.sin(boat.wind_angle - PI_FRAC_2);
         var r = 6.0;
         var l = cx * 0.9;
-        dc.fillPolygon([
+        var points = [
             [cx + x * l, cy + y * l],
             [cy + y * r, cx - x * r],
             [cy - y * r, cx + x * r],
-        ]);
+        ];
+
+        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        for (var i = 0; i < 3; i++) {
+            var a = points[i];
+            var b = points[(i + 1) % 3];
+            dc.drawLine(a[0], a[1], b[0], b[1]);
+        }
+        dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+        dc.fillPolygon(points);
+
         dc.fillCircle(cx, cy, r * 2);
         dc.setColor(DARK_GRAY, Graphics.COLOR_BLACK);
         dc.drawCircle(cx, cy, r * 2);

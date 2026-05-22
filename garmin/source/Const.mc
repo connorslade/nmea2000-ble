@@ -15,7 +15,7 @@ const DARK_GRAY = Graphics.createColor(255, 0x32, 0x32, 0x32);
 public class Const {
 }
 
-function fontBolt(size as Number) as Graphics.VectorFont {
+function fontBold(size as Number) as Graphics.VectorFont {
     return Graphics.getVectorFont({
         :face => ["RobotoCondensedBold"],
         :size => size,
