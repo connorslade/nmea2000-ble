@@ -13,13 +13,13 @@ class App extends Application.AppBase {
 
     function onStart(state as Dictionary?) as Void {
         timer.start(method(:onTimer), 1000, true);
-        // self.boat.initialize();
+        self.boat.initialize();
     }
 
     function onStop(state as Dictionary?) as Void {}
 
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        return [new WindView(self.boat)];
+        return [new ConnectingView()];
     }
 
     function onTimer() {

@@ -1,6 +1,6 @@
 use std::{
     collections::VecDeque,
-    sync::{Arc, MappedMutexGuard, Mutex, MutexGuard, mpsc::SyncSender},
+    sync::{Arc, Mutex, MutexGuard, mpsc::SyncSender},
 };
 
 use anyhow::Result;
@@ -73,10 +73,6 @@ impl App {
         self.boat.force_lock()
     }
 
-    pub fn bt(&self) -> MappedMutexGuard<'_, Arc<Bluetooth>> {
-        MutexGuard::map(self.bt.force_lock(), |x| x.as_mut().unwrap())
-    }
-
     pub fn enqueue_packet(&self, packet: RawPacket) {
         self.packets.force_lock().push(packet);
     }
@@ -118,7 +114,7 @@ impl App {
 }
 
 impl Boat {
-    pub fn notify(&self, bt: MappedMutexGuard<Arc<Bluetooth>>, characteristic: Characteristic) {
+    pub fn notify(&self, bt: &Arc<Bluetooth>, characteristic: Characteristic) {
         bt.notify(characteristic, &self.packet(characteristic));
     }
 

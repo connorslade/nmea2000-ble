@@ -1,4 +1,3 @@
-#![feature(mapped_lock_guards)]
 #![feature(iter_intersperse)]
 
 use std::{
@@ -14,6 +13,7 @@ use esp_idf_hal::peripherals::Peripherals;
 use crate::{
     app::{App, MemoryLogger},
     ble::characteristics::Characteristic,
+    util::ForceLock,
 };
 
 use common::SpiFlash;
@@ -50,7 +50,9 @@ fn main() -> Result<()> {
     thread::spawn(clone!([app], move || {
         loop {
             let timer = Instant::now();
-            app.boat().notify(app.bt(), Characteristic::WindScreen);
+            if let Some(bt) = &*app.bt.force_lock() {
+                app.boat().notify(bt, Characteristic::WindScreen);
+            }
             thread::sleep(Duration::from_millis(100) - timer.elapsed());
         }
     }));
