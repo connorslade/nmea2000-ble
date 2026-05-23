@@ -75,7 +75,7 @@ class BluetoothDelegate extends Ble.BleDelegate {
 
             WatchUi.switchToView(
                 new WindView(self.boat),
-                null,
+                new WindViewDelegate(self.boat),
                 WatchUi.SLIDE_UP
             );
             return;

@@ -1,3 +1,4 @@
+import Toybox.Lang;
 import Toybox.System;
 import Toybox.WatchUi;
 
@@ -140,5 +141,23 @@ class WindView extends WatchUi.View {
         dc.fillCircle(cx, cy, r * 2);
         dc.setColor(DARK_GRAY, Graphics.COLOR_BLACK);
         dc.drawCircle(cx, cy, r * 2);
+    }
+}
+
+class WindViewDelegate extends WatchUi.BehaviorDelegate {
+    var boat;
+
+    public function initialize(boat as Boat) {
+        BehaviorDelegate.initialize();
+        self.boat = boat;
+    }
+
+    public function onKey(keyEvent as WatchUi.KeyEvent) as Boolean {
+        if (keyEvent.getKey() == WatchUi.KEY_DOWN) {
+            var dataView = dataView(self.boat);
+            WatchUi.switchToView(dataView[0], dataView[1], WatchUi.SLIDE_UP);
+            return true;
+        }
+        return false;
     }
 }

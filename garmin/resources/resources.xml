@@ -4,4 +4,6 @@
     <bitmap id="LauncherIcon" filename="launcher-icon.svg" />
     <bitmap id="BoatIcon" filename="boat.svg" />
     <bitmap id="WindIcon" filename="wind.svg" />
+    <bitmap id="DepthIcon" filename="depth.svg" scaleRelativeTo="image" scaleX="150%" scaleY="150%" />
+    <bitmap id="TemperatureIcon" filename="temperature.svg" scaleRelativeTo="image" scaleX="150%" scaleY="150%" />
 </resources>
