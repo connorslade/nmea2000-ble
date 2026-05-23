@@ -86,13 +86,20 @@ fn on_packet(app: &App, nmea2000: &mut Nmea2000, packet: Packet) {
             _ => {}
         },
         Packet::PositionRapidUpdate(packet) => {
-            app.position_update(packet.latitude, packet.longitude);
+            let mut boat = app.boat();
+            boat.latitude = packet.latitude;
+            boat.longitude = packet.longitude;
         }
         Packet::CogSogRapidUpdate(packet) => {
-            app.speed_update(packet.sog);
+            app.boat().speed_over_ground.push(packet.sog as f32);
         }
         Packet::WindData(packet) => {
-            app.wind_update(packet.wind_speed, packet.wind_angle);
+            let mut boat = app.boat();
+            boat.wind_speed.push(packet.wind_speed as f32);
+            boat.wind_angle.push(packet.wind_angle as f32);
+        }
+        Packet::WaterDepth(packet) => {
+            app.boat().depth.push(packet.depth as f32);
         }
         _ => {}
     }

@@ -3,6 +3,7 @@ use std::fmt::Debug;
 use crate::{
     Header,
     packets::{
+        environment::WaterDepth,
         fast::encode_fast_packet,
         handshake::{AddressClaim, IsoRequest, ProductInformation},
         motion::{CogSogRapidUpdate, PositionRapidUpdate, VesselHeading, WindData},
@@ -10,6 +11,7 @@ use crate::{
     },
 };
 
+pub mod environment;
 pub mod fast;
 pub mod handshake;
 pub mod motion;
@@ -24,6 +26,7 @@ pub enum Packet {
     CogSogRapidUpdate(CogSogRapidUpdate),
     VesselHeading(VesselHeading),
     WindData(WindData),
+    WaterDepth(WaterDepth),
     SimnetAp(SimnetAp),
 }
 
@@ -62,7 +65,8 @@ impl Packet {
                 PositionRapidUpdate,
                 CogSogRapidUpdate,
                 VesselHeading,
-                WindData
+                WindData,
+                WaterDepth
             ]
         )
     }

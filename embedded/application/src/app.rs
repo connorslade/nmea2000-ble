@@ -38,6 +38,7 @@ pub struct Boat {
     pub wind_speed: RollingAverage<16>,
     pub wind_angle: RollingAverage<16>,
     pub speed_over_ground: RollingAverage<16>,
+    pub depth: RollingAverage<16>,
 }
 
 pub enum IndicatorEvent {
@@ -94,23 +95,6 @@ impl App {
         let mut channel = self.indicator.force_lock();
         channel.as_mut().unwrap().send(event).unwrap();
     }
-
-    pub fn position_update(&self, lat: i32, lon: i32) {
-        let mut boat = self.boat();
-        boat.latitude = lat;
-        boat.longitude = lon;
-    }
-
-    pub fn speed_update(&self, speed: u16) {
-        let mut boat = self.boat();
-        boat.speed_over_ground.push(speed as f32);
-    }
-
-    pub fn wind_update(&self, speed: u16, angle: u16) {
-        let mut boat = self.boat();
-        boat.wind_speed.push(speed as f32);
-        boat.wind_angle.push(angle as f32);
-    }
 }
 
 impl Boat {
@@ -121,6 +105,7 @@ impl Boat {
     pub fn packet(&self, characteristic: Characteristic) -> Vec<u8> {
         match characteristic {
             Characteristic::WindScreen => self.wind_screen_packet(),
+            Characteristic::DataScreen => self.data_screen_packet(),
         }
     }
 
@@ -129,6 +114,12 @@ impl Boat {
         out.extend((self.speed_over_ground.avg() as u16).to_le_bytes());
         out.extend((self.wind_speed.avg() as u16).to_le_bytes());
         out.extend((self.wind_angle.avg() as u16).to_le_bytes());
+        out
+    }
+
+    fn data_screen_packet(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend((self.depth.avg() as u16).to_le_bytes());
         out
     }
 }

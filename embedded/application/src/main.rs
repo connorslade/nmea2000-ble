@@ -52,6 +52,7 @@ fn main() -> Result<()> {
             let timer = Instant::now();
             if let Some(bt) = &*app.bt.force_lock() {
                 app.boat().notify(bt, Characteristic::WindScreen);
+                app.boat().notify(bt, Characteristic::DataScreen);
             }
             thread::sleep(Duration::from_millis(100) - timer.elapsed());
         }

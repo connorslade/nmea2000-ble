@@ -44,18 +44,21 @@ pub mod characteristics {
     use esp_idf_svc::bt::BtUuid;
     use uuid::uuid;
 
-    pub const ALL: &[u128] = &[WIND_SCREEN];
+    pub const ALL: &[u128] = &[WIND_SCREEN, DATA_SCREEN];
 
     pub const WIND_SCREEN: u128 = uuid!("300b2aec-a094-43fb-98ff-04917cf7a2fb").as_u128();
+    pub const DATA_SCREEN: u128 = uuid!("1522bc71-f42c-4c5f-81cc-54d0583f22c7").as_u128();
 
     #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
     pub enum Characteristic {
         WindScreen,
+        DataScreen,
     }
 
     #[derive(Default)]
     pub struct CharacteristicHandles {
         pub wind_screen: AtomicU16,
+        pub data_screen: AtomicU16,
     }
 
     impl CharacteristicHandles {
@@ -63,6 +66,7 @@ pub mod characteristics {
             let uuid = u128::from_ne_bytes(*char_uuid.as_bytes().as_array::<16>().unwrap());
             match uuid {
                 WIND_SCREEN => self.wind_screen.store(attr_handle, Ordering::Relaxed),
+                DATA_SCREEN => self.data_screen.store(attr_handle, Ordering::Relaxed),
                 _ => unreachable!(),
             }
         }
@@ -70,6 +74,8 @@ pub mod characteristics {
         pub fn characteristic(&self, handle: u16) -> Option<Characteristic> {
             if handle == self.wind_screen.load(Ordering::Relaxed) {
                 Some(Characteristic::WindScreen)
+            } else if handle == self.data_screen.load(Ordering::Relaxed) {
+                Some(Characteristic::DataScreen)
             } else {
                 None
             }
@@ -78,6 +84,7 @@ pub mod characteristics {
         pub fn handle(&self, characteristic: &Characteristic) -> u16 {
             match characteristic {
                 Characteristic::WindScreen => self.wind_screen.load(Ordering::Relaxed),
+                Characteristic::DataScreen => self.data_screen.load(Ordering::Relaxed),
             }
         }
     }
