@@ -60,7 +60,7 @@ fn main() -> Result<()> {
 
     wifi::init(app.clone(), wifi_modem)?;
     ble::init(app.clone(), ble_modem)?;
-    can::init(app.clone(), peripherals.can, pins.gpio6, pins.gpio5)?;
+    can::init(app.clone(), peripherals.can, pins.gpio5, pins.gpio6)?;
     indicator::init(app.clone(), ledc.channel0, ledc.timer0, pins.gpio20)?;
 
     loop {

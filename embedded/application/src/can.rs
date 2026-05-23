@@ -50,15 +50,13 @@ pub fn init(
     let mut idle = true;
     thread::spawn(move || {
         loop {
-            let Ok(frame) = can_receive_raw(&can, DELAY.ticks()) else {
-                continue;
+            if let Ok(frame) = can_receive_raw(&can, DELAY.ticks()) {
+                app.on_can_frame(frame);
+                if let Some(packet) = nmea2000.on_packet(frame.identifier, frame.data) {
+                    mem::take(&mut idle).then(|| app.indicator(IndicatorEvent::CanOnline));
+                    on_packet(&app, &mut nmea2000, packet);
+                }
             };
-
-            app.on_can_frame(frame);
-            if let Some(packet) = nmea2000.on_packet(frame.identifier, frame.data) {
-                mem::take(&mut idle).then(|| app.indicator(IndicatorEvent::CanOnline));
-                on_packet(&app, &mut nmea2000, packet);
-            }
 
             // todo: don't dequeue if not going to send
             for packet in nmea2000.dequeue() {

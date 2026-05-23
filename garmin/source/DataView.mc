@@ -9,6 +9,7 @@ public function dataView(
         :dividerType => WatchUi.Menu2.DIVIDER_TYPE_ICON,
     });
 
+    menu.addItem(menuItem("Velocity Made Good", "0%", Rez.Drawables.VmgIcon));
     menu.addItem(menuItem("Depth", "0.0m", Rez.Drawables.DepthIcon));
     menu.addItem(menuItem("Water Temp", "0°F", Rez.Drawables.TemperatureIcon));
 

@@ -6,4 +6,5 @@
     <bitmap id="WindIcon" filename="wind.svg" />
     <bitmap id="DepthIcon" filename="depth.svg" scaleRelativeTo="image" scaleX="150%" scaleY="150%" />
     <bitmap id="TemperatureIcon" filename="temperature.svg" scaleRelativeTo="image" scaleX="150%" scaleY="150%" />
+    <bitmap id="VmgIcon" filename="vmg.svg" scaleRelativeTo="image" scaleX="150%" scaleY="150%" />
 </resources>

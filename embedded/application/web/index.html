@@ -17,6 +17,7 @@
     </head>
     <body>
         <h1>windlink</h1>
+        <p>NMEA 2000 compatible wireless interface.</p>
         <a href="https://github.com/connorslade/windlink">Source Code</a>
 
         <h2>Status</h2>
@@ -65,7 +66,7 @@
                     }),
                     (l.onload = () => {
                         if (200 === l.status) {
-                            let e = 10;
+                            let e = 20;
                             message.innerText = `Update successful. Reloading in ${e}s...`;
                             const s = setInterval(() => {
                                 ((message.innerText = `Update successful. Reloading in ${--e}s...`),
