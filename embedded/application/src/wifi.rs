@@ -115,10 +115,7 @@ pub fn init(app: Arc<App>, modem: WifiModem<'static>) -> Result<()> {
     thread::spawn(move || {
         for stream in socket.incoming().filter_map(|x| x.ok()) {
             let mut stream = SharedStream::new(stream);
-
-            let mut wireless = app.wireless.force_lock();
-            wireless.push(WirelessClient::new(&stream));
-            drop(wireless);
+            app.wireless.force_lock().push(WirelessClient::new(&stream));
 
             thread::spawn(clone!([app], move || {
                 while let Ok((id, data)) = read_api_packet(&mut stream) {
@@ -161,7 +158,7 @@ fn read_api_packet(reader: &mut impl Read) -> Result<(u32, [u8; 8])> {
     reader.read_exact(&mut length)?;
     let length = length[0] as usize;
 
-    let mut data = [0_u8; 8];
+    let mut data = [0xFF_u8; 8];
     reader.read_exact(&mut data[..length])?;
 
     Ok((u32::from_be_bytes(ident), data))

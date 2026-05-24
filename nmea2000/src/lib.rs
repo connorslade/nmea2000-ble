@@ -66,7 +66,7 @@ impl Nmea2000 {
         }
     }
 
-    pub fn with_prefered_address(self, address: u8) -> Self {
+    pub fn with_preferred_address(self, address: u8) -> Self {
         Self {
             address,
             start_address: address,

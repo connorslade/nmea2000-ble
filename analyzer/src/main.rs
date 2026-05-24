@@ -1,5 +1,5 @@
 use std::{
-    io::{BufReader, BufWriter, Read, Write, stdin},
+    io::{BufReader, Read, Write, stdin},
     net::{SocketAddr, TcpStream},
     sync::mpsc::sync_channel,
     thread,
@@ -9,7 +9,10 @@ use anyhow::{Result, bail};
 use mdns_sd::{ServiceDaemon, ServiceEvent};
 use nmea2000::{
     Header, Nmea2000,
-    packets::{Packet, proprietary::SimnetAp},
+    packets::{
+        Packet,
+        proprietary::{SimnetAp, SimnetAp2},
+    },
 };
 
 fn main() -> Result<()> {
@@ -17,19 +20,28 @@ fn main() -> Result<()> {
     let service = find_service()?;
     println!("Found!");
 
-    let socket = TcpStream::connect(service)?;
+    let mut socket = TcpStream::connect(service)?;
     let mut reader = BufReader::new(socket.try_clone()?);
-    let mut writer = BufWriter::new(socket);
 
-    let mut nmea2000 = Nmea2000::new();
+    let mut nmea2000 = Nmea2000::new().with_preferred_address(0x90);
 
     let (tx, rx) = sync_channel(10);
     thread::spawn(move || {
+        let mut stdin = stdin();
         loop {
             let out = &mut [0];
-            if let Ok(1) = stdin().read(out)
-                && out[0] == 10
+            if let Ok(1) = stdin.read(out)
+                && out[0] == b'\n'
             {
+                tx.send(Packet::SimnetAp2(SimnetAp2 {
+                    a: 0x00,
+                    b: 0x00,
+                    c: 0xFE,
+                    d: 0xF8,
+                    e: 0x00,
+                }))
+                .unwrap();
+
                 tx.send(Packet::SimnetAp(SimnetAp {
                     address: 6,
                     proprietary: 255,
@@ -49,23 +61,25 @@ fn main() -> Result<()> {
         let length = read_bytes::<1>(&mut reader)?[0] as usize;
         reader.read_exact(&mut data[..length])?;
 
-        if header.pgn == SimnetAp::PGN {
-            println!(" | {header:?} {:?}", &data[..length]);
-        }
-
-        if let Some(Packet::SimnetAp(packet)) = nmea2000.on_packet(ident, data) {
-            println!("{packet:?}");
+        if let Some(packet) = nmea2000.on_packet(ident, data) {
+            match packet {
+                Packet::SimnetAp(packet) => println!("{header:?} {packet:?}"),
+                Packet::SimnetAp2(packet) => println!("{header:?} {packet:?}"),
+                // Packet::SimnetApStatus(packet) => println!("{header:?} {packet:?}"),
+                _ => {}
+            }
         }
 
         while let Ok(packet) = rx.try_recv() {
-            println!("enqueue!");
-            nmea2000.enqueue(packet, 255);
+            nmea2000.enqueue(packet, 0xFF);
         }
+
         for packet in nmea2000.dequeue() {
             println!("Sending {packet:?}");
-            writer.write_all(&packet.id.to_be_bytes())?;
-            writer.write_all(&[8])?;
-            writer.write_all(&packet.data)?;
+            socket.write_all(&packet.id.to_be_bytes())?;
+            socket.write_all(&[8])?;
+            socket.write_all(&packet.data)?;
+            socket.flush()?;
         }
     }
 }

@@ -38,3 +38,64 @@ impl SimnetAp {
         out
     }
 }
+
+// PGN 65340 - Simnet: AP Unknown 2
+#[derive(Debug)]
+pub struct SimnetAp2 {
+    pub a: u8,
+    pub b: u8,
+    pub c: u8,
+    pub d: u8,
+    pub e: u8,
+}
+
+impl SimnetAp2 {
+    pub const PGN: u32 = 0xFF3C;
+
+    pub fn deserialize(data: u64) -> Self {
+        Self {
+            a: (data >> 16 & bits(8)) as _,
+            b: (data >> 24 & bits(8)) as _,
+            c: (data >> 32 & bits(8)) as _,
+            d: (data >> 40 & bits(8)) as _,
+            e: (data >> 48 & bits(8)) as _,
+        }
+    }
+
+    pub fn serialize(&self) -> u64 {
+        (1857 | 0b11 << 11 | 0b100 << 13)
+            | (self.a as u64) << 16
+            | (self.b as u64) << 24
+            | (self.c as u64) << 32
+            | (self.d as u64) << 40
+            | (self.e as u64) << 48
+            | (0x80) << 56
+    }
+}
+
+// PGN 65305 - Simnet: Device Status
+#[derive(Debug)]
+pub struct SimnetApStatus {
+    pub model: u8,
+    pub report: u8,
+    pub status: u8,
+}
+
+impl SimnetApStatus {
+    pub const PGN: u32 = 0xFF19;
+
+    pub fn deserialize(data: u64) -> Self {
+        Self {
+            model: (data >> 16 & bits(8)) as _,
+            report: (data >> 24 & bits(8)) as _,
+            status: (data >> 32 & bits(8)) as _,
+        }
+    }
+
+    pub fn serialize(&self) -> u64 {
+        (1857 | 0b11 << 11 | 0b100 << 13)
+            | (self.model as u64) << 16
+            | (self.report as u64) << 24
+            | (self.status as u64) << 32
+    }
+}

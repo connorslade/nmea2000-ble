@@ -113,3 +113,32 @@ impl WindData {
             | (self.reference as u64) << 40
     }
 }
+
+// PGN 127257 - Attitude
+#[derive(Debug, Clone)]
+pub struct Attitude {
+    pub sid: u8,
+    pub yaw: i16,
+    pub pitch: i16,
+    pub roll: i16,
+}
+
+impl Attitude {
+    pub const PGN: u32 = 0x1F119;
+
+    pub fn deserialize(data: u64) -> Self {
+        Self {
+            sid: (data & bits(8)) as _,
+            yaw: (data >> 8 & bits(16)) as _,
+            pitch: (data >> 24 & bits(16)) as _,
+            roll: (data >> 32 & bits(16)) as _,
+        }
+    }
+
+    pub fn serialize(&self) -> u64 {
+        self.sid as u64
+            | (self.yaw as u64) << 8
+            | (self.pitch as u64) << 24
+            | (self.roll as u64) << 32
+    }
+}

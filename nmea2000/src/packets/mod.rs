@@ -3,11 +3,11 @@ use std::fmt::Debug;
 use crate::{
     Header,
     packets::{
-        environment::WaterDepth,
+        environment::{Temperature, WaterDepth},
         fast::encode_fast_packet,
         handshake::{AddressClaim, IsoRequest, ProductInformation},
-        motion::{CogSogRapidUpdate, PositionRapidUpdate, VesselHeading, WindData},
-        proprietary::SimnetAp,
+        motion::{Attitude, CogSogRapidUpdate, PositionRapidUpdate, VesselHeading, WindData},
+        proprietary::{SimnetAp, SimnetAp2, SimnetApStatus},
     },
 };
 
@@ -25,9 +25,13 @@ pub enum Packet {
     PositionRapidUpdate(PositionRapidUpdate),
     CogSogRapidUpdate(CogSogRapidUpdate),
     VesselHeading(VesselHeading),
+    Attitude(Attitude),
     WindData(WindData),
     WaterDepth(WaterDepth),
+    Temperature(Temperature),
     SimnetAp(SimnetAp),
+    SimnetAp2(SimnetAp2),
+    SimnetApStatus(SimnetApStatus),
 }
 
 #[derive(Debug)]
@@ -48,8 +52,10 @@ macro_rules! parse_packet {
 impl Packet {
     pub fn pgn(&self) -> u32 {
         match self {
+            Packet::IsoRequest(_) => IsoRequest::PGN,
             Packet::ProductInformation(_) => ProductInformation::PGN,
             Packet::SimnetAp(_) => SimnetAp::PGN,
+            Packet::SimnetAp2(_) => SimnetAp2::PGN,
             _ => unimplemented!(),
         }
     }
@@ -65,8 +71,12 @@ impl Packet {
                 PositionRapidUpdate,
                 CogSogRapidUpdate,
                 VesselHeading,
+                Attitude,
                 WindData,
-                WaterDepth
+                WaterDepth,
+                Temperature,
+                SimnetAp2,
+                SimnetApStatus
             ]
         )
     }
@@ -88,6 +98,12 @@ impl Packet {
                     &packet.serialize(),
                     out,
                 );
+            }
+            Packet::SimnetAp2(packet) => {
+                out.push(RawPacket::new(
+                    Header::new(SimnetAp2::PGN, 3, dest),
+                    packet.serialize(),
+                ));
             }
             Packet::SimnetAp(packet) => {
                 encode_fast_packet(
